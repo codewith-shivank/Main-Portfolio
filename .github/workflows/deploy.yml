@@ -35,14 +35,20 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
           # Optional: add your Vite env vars here if needed
           # VITE_EMAILJS_SERVICE_ID: ${{ secrets.VITE_EMAILJS_SERVICE_ID }}
           # VITE_EMAILJS_TEMPLATE_ID: ${{ secrets.VITE_EMAILJS_TEMPLATE_ID }}
           # VITE_EMAILJS_AUTOREPLY_TEMPLATE_ID: ${{ secrets.VITE_EMAILJS_AUTOREPLY_TEMPLATE_ID }}
           # VITE_EMAILJS_PUBLIC_KEY: ${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}
 
+      - name: Add SPA fallback
+        run: cp dist/index.html dist/404.html
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

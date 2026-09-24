@@ -20,6 +20,7 @@ docker-compose ps
 ```
 
 Services exposed:
+
 - **Frontend & Full Stack App:** `http://localhost:3000`
 - **Spring Boot Backend:** `http://localhost:8080`
 - **PostgreSQL Database:** `localhost:5432`
@@ -29,6 +30,7 @@ Services exposed:
 ## 2. Cloud Deployment (Render / Railway / GCP Cloud Run)
 
 ### Option A: Full-Stack Node Runtime (Integrated Dev & Production)
+
 The repository contains an integrated Node.js / Express server (`server.ts`) that serves both the compiled React frontend and the RAG API endpoints.
 
 1. Build command:
@@ -49,11 +51,13 @@ The repository contains an integrated Node.js / Express server (`server.ts`) tha
 ## 3. Health & Readiness Verification
 
 Run the automated health probe:
+
 ```bash
 curl -f http://localhost:3000/api/health
 ```
 
 Expected output:
+
 ```json
 {
   "application": "UP",
@@ -63,3 +67,7 @@ Expected output:
   "totalKnowledgeChunks": 14
 }
 ```
+
+## 4. GitHub Pages
+
+The GitHub Pages workflow publishes the React frontend as a static site. Set the repository variable `VITE_API_BASE_URL` to the public URL of the deployed Node backend so AI chat, admin ingestion, consistency checks, and inquiry submission can reach the API. Leave it unset for same-origin local or full-stack deployments.

@@ -3,20 +3,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
-import { 
-  Database, 
-  X, 
-  Upload, 
-  Check, 
-  RefreshCw, 
-  ShieldAlert, 
-  Lock, 
-  Key, 
-  Layers, 
+import React, { useState, useEffect } from "react";
+import { apiUrl } from "../services/apiClient";
+import {
+  Database,
+  X,
+  Upload,
+  Check,
+  RefreshCw,
+  ShieldAlert,
+  Lock,
+  Key,
+  Layers,
   FileText,
-  Search
-} from 'lucide-react';
+  Search,
+} from "lucide-react";
 
 interface DocumentSummary {
   document: string;
@@ -25,25 +26,34 @@ interface DocumentSummary {
   chunkCount: number;
 }
 
-export const AdminKnowledgeModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
-  isOpen,
-  onClose
-}) => {
+export const AdminKnowledgeModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+}> = ({ isOpen, onClose }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [adminPassword, setAdminPassword] = useState('');
+  const [adminPassword, setAdminPassword] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Ingestion form state
-  const [docTitle, setDocTitle] = useState('');
-  const [docSource, setDocSource] = useState('Admin Ingestion');
-  const [docSection, setDocSection] = useState('');
-  const [docContentType, setDocContentType] = useState<'profile' | 'experience' | 'skills' | 'projects' | 'education' | 'certifications'>('projects');
-  const [docText, setDocText] = useState('');
-  const [docTags, setDocTags] = useState('');
-  
+  const [docTitle, setDocTitle] = useState("");
+  const [docSource, setDocSource] = useState("Admin Ingestion");
+  const [docSection, setDocSection] = useState("");
+  const [docContentType, setDocContentType] = useState<
+    | "profile"
+    | "experience"
+    | "skills"
+    | "projects"
+    | "education"
+    | "certifications"
+  >("projects");
+  const [docText, setDocText] = useState("");
+  const [docTags, setDocTags] = useState("");
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [indexedDocuments, setIndexedDocuments] = useState<DocumentSummary[]>([]);
+  const [indexedDocuments, setIndexedDocuments] = useState<DocumentSummary[]>(
+    [],
+  );
   const [totalChunks, setTotalChunks] = useState(14);
 
   useEffect(() => {
@@ -54,41 +64,41 @@ export const AdminKnowledgeModal: React.FC<{ isOpen: boolean; onClose: () => voi
 
   const fetchDocuments = async () => {
     try {
-      const res = await fetch('/api/documents');
+      const res = await fetch(apiUrl("/api/documents"));
       if (res.ok) {
         const data = await res.json();
         setIndexedDocuments(data.documents || []);
         setTotalChunks(data.totalChunks || 14);
       }
     } catch (e) {
-      console.warn('Failed to fetch documents', e);
+      console.warn("Failed to fetch documents", e);
     }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: adminPassword })
+      const res = await fetch(apiUrl("/api/admin/login"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: adminPassword }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
         setIsAuthenticated(true);
         setAuthError(null);
       } else {
-        setAuthError(data.error || 'Invalid administrator password.');
+        setAuthError(data.error || "Invalid administrator password.");
       }
     } catch (err) {
-      setAuthError('Connection error verifying password.');
+      setAuthError("Connection error verifying password.");
     }
   };
 
   const handleIngestDocument = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!docTitle || !docText || !docSection) {
-      alert('Please fill out Title, Section, and Content.');
+      alert("Please fill out Title, Section, and Content.");
       return;
     }
 
@@ -96,32 +106,35 @@ export const AdminKnowledgeModal: React.FC<{ isOpen: boolean; onClose: () => voi
     setStatusMessage(null);
 
     try {
-      const res = await fetch('/api/documents/ingest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch(apiUrl("/api/documents/ingest"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: docTitle,
           source: docSource,
           section: docSection,
           contentType: docContentType,
           text: docText,
-          tags: docTags.split(',').map(t => t.trim()).filter(Boolean)
-        })
+          tags: docTags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean),
+        }),
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
         setStatusMessage(data.message);
-        setDocTitle('');
-        setDocSection('');
-        setDocText('');
-        setDocTags('');
+        setDocTitle("");
+        setDocSection("");
+        setDocText("");
+        setDocTags("");
         fetchDocuments();
       } else {
-        setStatusMessage(data.error || 'Failed to ingest document.');
+        setStatusMessage(data.error || "Failed to ingest document.");
       }
     } catch (err) {
-      setStatusMessage('Network error during ingestion.');
+      setStatusMessage("Network error during ingestion.");
     } finally {
       setIsSubmitting(false);
     }
@@ -130,18 +143,17 @@ export const AdminKnowledgeModal: React.FC<{ isOpen: boolean; onClose: () => voi
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto no-print"
       role="dialog"
       aria-modal="true"
     >
-      <div 
+      <div
         className="fixed inset-0 bg-neutral-950/75 backdrop-blur-xs"
         onClick={onClose}
       />
 
       <div className="relative w-full max-w-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-2xl overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-150">
-        
         {/* Header */}
         <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between bg-neutral-50 dark:bg-neutral-950/70">
           <div className="flex items-center gap-2.5">
@@ -176,7 +188,8 @@ export const AdminKnowledgeModal: React.FC<{ isOpen: boolean; onClose: () => voi
               Admin Access Protected
             </h4>
             <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-6">
-              Enter administrator password to ingest documents, inspect vector chunks, or update RAG knowledge embeddings.
+              Enter administrator password to ingest documents, inspect vector
+              chunks, or update RAG knowledge embeddings.
             </p>
 
             <form onSubmit={handleLogin} className="space-y-3">
@@ -208,7 +221,6 @@ export const AdminKnowledgeModal: React.FC<{ isOpen: boolean; onClose: () => voi
         ) : (
           /* Authenticated Ingestion View */
           <div className="p-6 max-h-[75vh] overflow-y-auto space-y-6">
-            
             {statusMessage && (
               <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
                 <Check className="w-4 h-4 shrink-0" />
@@ -232,7 +244,7 @@ export const AdminKnowledgeModal: React.FC<{ isOpen: boolean; onClose: () => voi
                       type="text"
                       required
                       value={docTitle}
-                      onChange={e => setDocTitle(e.target.value)}
+                      onChange={(e) => setDocTitle(e.target.value)}
                       placeholder="e.g. updated-resume-2026.pdf"
                       className="w-full px-3 py-1.5 text-xs rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none"
                     />
@@ -246,7 +258,7 @@ export const AdminKnowledgeModal: React.FC<{ isOpen: boolean; onClose: () => voi
                       type="text"
                       required
                       value={docSection}
-                      onChange={e => setDocSection(e.target.value)}
+                      onChange={(e) => setDocSection(e.target.value)}
                       placeholder="e.g. Cloud Architecture Skills"
                       className="w-full px-3 py-1.5 text-xs rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none"
                     />
@@ -260,7 +272,7 @@ export const AdminKnowledgeModal: React.FC<{ isOpen: boolean; onClose: () => voi
                     </label>
                     <select
                       value={docContentType}
-                      onChange={e => setDocContentType(e.target.value as any)}
+                      onChange={(e) => setDocContentType(e.target.value as any)}
                       className="w-full px-3 py-1.5 text-xs rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none"
                     >
                       <option value="projects">Projects</option>
@@ -279,7 +291,7 @@ export const AdminKnowledgeModal: React.FC<{ isOpen: boolean; onClose: () => voi
                     <input
                       type="text"
                       value={docTags}
-                      onChange={e => setDocTags(e.target.value)}
+                      onChange={(e) => setDocTags(e.target.value)}
                       placeholder="spring boot, microservices, java, aws"
                       className="w-full px-3 py-1.5 text-xs rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none"
                     />
@@ -294,7 +306,7 @@ export const AdminKnowledgeModal: React.FC<{ isOpen: boolean; onClose: () => voi
                     rows={4}
                     required
                     value={docText}
-                    onChange={e => setDocText(e.target.value)}
+                    onChange={(e) => setDocText(e.target.value)}
                     placeholder="Paste verified factual text to be cleaned, chunked, and indexed..."
                     className="w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-white focus:outline-none"
                   />
@@ -302,7 +314,8 @@ export const AdminKnowledgeModal: React.FC<{ isOpen: boolean; onClose: () => voi
 
                 <div className="flex items-center justify-between pt-2">
                   <span className="text-[11px] font-mono text-neutral-400">
-                    Chunking pipeline automatically splits at sentence boundaries
+                    Chunking pipeline automatically splits at sentence
+                    boundaries
                   </span>
                   <button
                     type="submit"
@@ -310,7 +323,9 @@ export const AdminKnowledgeModal: React.FC<{ isOpen: boolean; onClose: () => voi
                     className="px-4 py-1.5 rounded-lg bg-cyan-600 dark:bg-cyan-500 hover:bg-cyan-700 dark:hover:bg-cyan-400 text-white dark:text-neutral-950 font-semibold text-xs flex items-center gap-1.5 shadow-2xs transition-colors"
                   >
                     <Upload className="w-3.5 h-3.5" />
-                    <span>{isSubmitting ? 'Ingesting...' : 'Ingest & Index Chunk'}</span>
+                    <span>
+                      {isSubmitting ? "Ingesting..." : "Ingest & Index Chunk"}
+                    </span>
                   </button>
                 </div>
               </form>
@@ -344,8 +359,11 @@ export const AdminKnowledgeModal: React.FC<{ isOpen: boolean; onClose: () => voi
                           {doc.document}
                         </span>
                         <div className="text-[11px] text-neutral-500 font-mono">
-                          Source: {doc.source} · Sections: {doc.sections.slice(0, 3).join(', ')}
-                          {doc.sections.length > 3 ? ` (+${doc.sections.length - 3})` : ''}
+                          Source: {doc.source} · Sections:{" "}
+                          {doc.sections.slice(0, 3).join(", ")}
+                          {doc.sections.length > 3
+                            ? ` (+${doc.sections.length - 3})`
+                            : ""}
                         </div>
                       </div>
                     </div>
@@ -357,10 +375,8 @@ export const AdminKnowledgeModal: React.FC<{ isOpen: boolean; onClose: () => voi
                 ))}
               </div>
             </div>
-
           </div>
         )}
-
       </div>
     </div>
   );

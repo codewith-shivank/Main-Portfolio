@@ -4,6 +4,7 @@
  */
 
 import emailjs from '@emailjs/browser';
+import { apiUrl } from './apiClient';
 
 export interface EmailJsConfig {
   serviceId: string;
@@ -210,7 +211,7 @@ export async function sendInquiry(
 
   // 2. Transmit to backend API route for reliable persistence, ticket tracking, and verified auto-reply generation
   try {
-    const response = await fetch('/api/inquiries/send', {
+    const response = await fetch(apiUrl('/api/inquiries/send'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

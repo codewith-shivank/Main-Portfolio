@@ -3,24 +3,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef, useEffect } from 'react';
-import { 
-  Bot, 
-  X, 
-  Send, 
-  Sparkles, 
-  Check, 
-  Copy, 
-  ChevronDown, 
-  ChevronUp, 
-  FileText, 
-  ShieldCheck, 
+import React, { useState, useRef, useEffect } from "react";
+import { apiUrl } from "../services/apiClient";
+import {
+  Bot,
+  X,
+  Send,
+  Sparkles,
+  Check,
+  Copy,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  ShieldCheck,
   Trash2,
   ExternalLink,
   MessageSquare,
-  Bookmark
-} from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+  Bookmark,
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 interface Source {
   document: string;
@@ -32,7 +33,7 @@ interface Source {
 
 interface Message {
   id: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   sources?: Source[];
   grounded?: boolean;
@@ -43,36 +44,45 @@ const RECRUITER_QUICK_QUESTIONS = [
   "Tell me about his Swiggy support experience",
   "Which projects demonstrate full-stack skills?",
   "What are his verified certifications?",
-  "How can I contact Shivank?"
+  "How can I contact Shivank?",
 ];
 
 export const AskShivankAiDrawer: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: 'msg-welcome',
-      role: 'assistant',
-      content: "Hello! I am **Ask Shivank AI**, a strictly grounded knowledge assistant for Shivank Maurya's portfolio. I answer questions directly using facts from his verified resume, employment records at Niftel (supporting Swiggy), and technical case studies.",
-      grounded: true
-    }
+      id: "msg-welcome",
+      role: "assistant",
+      content:
+        "Hello! I am **Ask Shivank AI**, a strictly grounded knowledge assistant for Shivank Maurya's portfolio. I answer questions directly using facts from his verified resume, employment records at Niftel (supporting Swiggy), and technical case studies.",
+      grounded: true,
+    },
   ]);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [expandedSources, setExpandedSources] = useState<{ [msgId: string]: boolean }>({});
+  const [expandedSources, setExpandedSources] = useState<{
+    [msgId: string]: boolean;
+  }>({});
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
   const [savedChatMsgId, setSavedChatMsgId] = useState<string | null>(null);
   const { bookmarkChat } = useAuth();
 
   const handleSaveChat = async (msg: Message) => {
-    const msgIndex = messages.findIndex(m => m.id === msg.id);
-    const lastUserMsg = msgIndex > 0 ? messages.slice(0, msgIndex).reverse().find(m => m.role === 'user') : null;
-    const queryText = lastUserMsg ? lastUserMsg.content : 'Portfolio Inquiry';
+    const msgIndex = messages.findIndex((m) => m.id === msg.id);
+    const lastUserMsg =
+      msgIndex > 0
+        ? messages
+            .slice(0, msgIndex)
+            .reverse()
+            .find((m) => m.role === "user")
+        : null;
+    const queryText = lastUserMsg ? lastUserMsg.content : "Portfolio Inquiry";
     try {
       await bookmarkChat(queryText, msg.content);
       setSavedChatMsgId(msg.id);
       setTimeout(() => setSavedChatMsgId(null), 2500);
     } catch (err) {
-      console.error('Failed to bookmark chat:', err);
+      console.error("Failed to bookmark chat:", err);
     }
   };
 
@@ -86,7 +96,7 @@ export const AskShivankAiDrawer: React.FC = () => {
   }, [isOpen]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
   const handleSendMessage = async (textToSend?: string) => {
@@ -95,23 +105,25 @@ export const AskShivankAiDrawer: React.FC = () => {
 
     const userMessage: Message = {
       id: `usr-${Date.now()}`,
-      role: 'user',
-      content: text
+      role: "user",
+      content: text,
     };
 
     const newHistory = [...messages, userMessage];
     setMessages(newHistory);
-    setInputValue('');
+    setInputValue("");
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch(apiUrl("/api/chat"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: text,
-          history: newHistory.slice(-5).map(m => ({ role: m.role, content: m.content }))
-        })
+          history: newHistory
+            .slice(-5)
+            .map((m) => ({ role: m.role, content: m.content })),
+        }),
       });
 
       if (!response.ok) {
@@ -121,23 +133,26 @@ export const AskShivankAiDrawer: React.FC = () => {
       const data = await response.json();
       const assistantMessage: Message = {
         id: `ast-${Date.now()}`,
-        role: 'assistant',
-        content: data.answer || "I don't have verified information about that in Shivank's portfolio knowledge base.",
+        role: "assistant",
+        content:
+          data.answer ||
+          "I don't have verified information about that in Shivank's portfolio knowledge base.",
         sources: data.sources || [],
-        grounded: data.grounded ?? true
+        grounded: data.grounded ?? true,
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
-      console.error('Chat error:', error);
-      setMessages(prev => [
+      console.error("Chat error:", error);
+      setMessages((prev) => [
         ...prev,
         {
           id: `err-${Date.now()}`,
-          role: 'assistant',
-          content: "Something went wrong while connecting to the RAG knowledge system. Please ensure the server is running or try again.",
-          grounded: false
-        }
+          role: "assistant",
+          content:
+            "Something went wrong while connecting to the RAG knowledge system. Please ensure the server is running or try again.",
+          grounded: false,
+        },
       ]);
     } finally {
       setIsLoading(false);
@@ -145,7 +160,7 @@ export const AskShivankAiDrawer: React.FC = () => {
   };
 
   const toggleSource = (msgId: string) => {
-    setExpandedSources(prev => ({ ...prev, [msgId]: !prev[msgId] }));
+    setExpandedSources((prev) => ({ ...prev, [msgId]: !prev[msgId] }));
   };
 
   const copyAnswer = (msgId: string, content: string) => {
@@ -158,10 +173,11 @@ export const AskShivankAiDrawer: React.FC = () => {
     setMessages([
       {
         id: `msg-cleared-${Date.now()}`,
-        role: 'assistant',
-        content: "Conversation history cleared. How can I help you evaluate Shivank's background today?",
-        grounded: true
-      }
+        role: "assistant",
+        content:
+          "Conversation history cleared. How can I help you evaluate Shivank's background today?",
+        grounded: true,
+      },
     ]);
   };
 
@@ -188,21 +204,20 @@ export const AskShivankAiDrawer: React.FC = () => {
 
       {/* Slide-over / Modal Drawer */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-end p-0 sm:p-4 no-print"
           role="dialog"
           aria-modal="true"
           aria-label="Ask Shivank AI RAG Assistant"
         >
           {/* Backdrop */}
-          <div 
+          <div
             className="fixed inset-0 bg-neutral-950/60 backdrop-blur-xs transition-opacity"
             onClick={() => setIsOpen(false)}
           />
 
           {/* Drawer Container */}
           <div className="relative w-full sm:max-w-md h-[88vh] sm:h-[650px] bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col z-10 animate-in slide-in-from-bottom sm:slide-in-from-right duration-200 overflow-hidden">
-            
             {/* Header */}
             <div className="px-4 py-3.5 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -246,7 +261,6 @@ export const AskShivankAiDrawer: React.FC = () => {
 
             {/* Conversation Area */}
             <div className="flex-1 p-4 overflow-y-auto space-y-4 text-xs">
-              
               {/* Recruiter Quick Prompts */}
               {messages.length <= 2 && (
                 <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950/60 border border-neutral-200/80 dark:border-neutral-800 space-y-2">
@@ -272,20 +286,20 @@ export const AskShivankAiDrawer: React.FC = () => {
               {messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
+                  className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}
                 >
                   <div
                     className={`max-w-[88%] p-3 rounded-xl leading-relaxed whitespace-pre-line ${
-                      msg.role === 'user'
-                        ? 'bg-neutral-900 text-white dark:bg-cyan-500 dark:text-neutral-950 rounded-br-none font-medium'
-                        : 'bg-neutral-100 dark:bg-neutral-800/70 text-neutral-800 dark:text-neutral-200 rounded-bl-none border border-neutral-200/60 dark:border-neutral-700/60'
+                      msg.role === "user"
+                        ? "bg-neutral-900 text-white dark:bg-cyan-500 dark:text-neutral-950 rounded-br-none font-medium"
+                        : "bg-neutral-100 dark:bg-neutral-800/70 text-neutral-800 dark:text-neutral-200 rounded-bl-none border border-neutral-200/60 dark:border-neutral-700/60"
                     }`}
                   >
                     {msg.content}
                   </div>
 
                   {/* Assistant Footer with Sources & Copy */}
-                  {msg.role === 'assistant' && msg.id !== 'msg-welcome' && (
+                  {msg.role === "assistant" && msg.id !== "msg-welcome" && (
                     <div className="mt-1.5 flex flex-col gap-1 w-full max-w-[88%]">
                       <div className="flex items-center justify-between text-[10px] text-neutral-400">
                         {msg.sources && msg.sources.length > 0 ? (
@@ -302,7 +316,9 @@ export const AskShivankAiDrawer: React.FC = () => {
                             )}
                           </button>
                         ) : (
-                          <span className="font-mono text-neutral-400">Direct knowledge match</span>
+                          <span className="font-mono text-neutral-400">
+                            Direct knowledge match
+                          </span>
                         )}
 
                         <div className="flex items-center gap-2">
@@ -311,9 +327,15 @@ export const AskShivankAiDrawer: React.FC = () => {
                             className="flex items-center gap-1 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
                             title="Save answer to your profile (Firestore)"
                           >
-                            <Bookmark className={`w-2.5 h-2.5 ${savedChatMsgId === msg.id ? 'fill-cyan-500 text-cyan-500' : ''}`} />
-                            <span className={savedChatMsgId === msg.id ? 'text-cyan-500' : ''}>
-                              {savedChatMsgId === msg.id ? 'Saved!' : 'Save'}
+                            <Bookmark
+                              className={`w-2.5 h-2.5 ${savedChatMsgId === msg.id ? "fill-cyan-500 text-cyan-500" : ""}`}
+                            />
+                            <span
+                              className={
+                                savedChatMsgId === msg.id ? "text-cyan-500" : ""
+                              }
+                            >
+                              {savedChatMsgId === msg.id ? "Saved!" : "Save"}
                             </span>
                           </button>
 
@@ -341,10 +363,17 @@ export const AskShivankAiDrawer: React.FC = () => {
                       {expandedSources[msg.id] && msg.sources && (
                         <div className="p-2 mt-1 rounded-lg bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-1.5 text-[11px]">
                           {msg.sources.map((src, idx) => (
-                            <div key={idx} className="border-b border-neutral-100 dark:border-neutral-800/80 last:border-0 pb-1 last:pb-0">
+                            <div
+                              key={idx}
+                              className="border-b border-neutral-100 dark:border-neutral-800/80 last:border-0 pb-1 last:pb-0"
+                            >
                               <div className="font-mono font-semibold text-neutral-700 dark:text-neutral-300 flex items-center justify-between">
-                                <span>{src.document} → {src.section}</span>
-                                <span className="text-neutral-400 font-normal">Relevance: {src.relevanceScore}</span>
+                                <span>
+                                  {src.document} → {src.section}
+                                </span>
+                                <span className="text-neutral-400 font-normal">
+                                  Relevance: {src.relevanceScore}
+                                </span>
                               </div>
                               <p className="text-neutral-500 dark:text-neutral-400 text-[10px] line-clamp-2 mt-0.5">
                                 "{src.textSnippet}"
@@ -364,7 +393,9 @@ export const AskShivankAiDrawer: React.FC = () => {
                   <div className="w-2 h-2 rounded-full bg-cyan-500 animate-bounce" />
                   <div className="w-2 h-2 rounded-full bg-cyan-500 animate-bounce [animation-delay:0.15s]" />
                   <div className="w-2 h-2 rounded-full bg-cyan-500 animate-bounce [animation-delay:0.3s]" />
-                  <span className="text-[11px] text-neutral-400 font-mono ml-1">Searching knowledge base...</span>
+                  <span className="text-[11px] text-neutral-400 font-mono ml-1">
+                    Searching knowledge base...
+                  </span>
                 </div>
               )}
 
@@ -401,9 +432,9 @@ export const AskShivankAiDrawer: React.FC = () => {
 
             {/* Footer privacy guarantee */}
             <div className="px-4 py-1.5 bg-neutral-100 dark:bg-neutral-950/80 border-t border-neutral-200 dark:border-neutral-800 text-[10px] text-neutral-500 dark:text-neutral-400 text-center font-mono">
-              Strictly grounded on verified resume records · Anti-hallucination guardrails active
+              Strictly grounded on verified resume records · Anti-hallucination
+              guardrails active
             </div>
-
           </div>
         </div>
       )}

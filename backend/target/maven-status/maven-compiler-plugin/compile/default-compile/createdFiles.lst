@@ -1,0 +1,4 @@
+com\shivank\portfolio\controller\ChatController.class
+com\shivank\portfolio\config\OpenApiConfig.class
+com\shivank\portfolio\PortfolioApplication.class
+com\shivank\portfolio\config\SecurityConfig.class
