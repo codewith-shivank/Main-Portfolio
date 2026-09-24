@@ -1,0 +1,175 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global security primitives
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isUser(userId) {
+      return isVerified() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isVerified() && request.auth.token.email == 'codewithshivank@gmail.com';
+    }
+
+    // --- Validation Helper: UserProfile ---
+    function isValidUserProfile(data, uid) {
+      return data.keys().hasAll(['userId', 'email', 'displayName', 'createdAt', 'updatedAt']) &&
+             data.keys().hasOnly(['userId', 'email', 'displayName', 'photoURL', 'company', 'role', 'createdAt', 'updatedAt']) &&
+             data.userId == uid &&
+             data.email is string && data.email.size() > 3 && data.email.size() <= 150 &&
+             data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 100 &&
+             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500)) &&
+             (!('company' in data) || (data.company is string && data.company.size() <= 100)) &&
+             (!('role' in data) || (data.role is string && data.role.size() <= 100)) &&
+             data.createdAt is string && data.createdAt.size() <= 50 &&
+             data.updatedAt is string && data.updatedAt.size() <= 50;
+    }
+
+    // --- Validation Helper: SavedProject ---
+    function isValidSavedProject(data, uid) {
+      return data.keys().hasAll(['id', 'userId', 'projectTitle', 'savedAt']) &&
+             data.keys().hasOnly(['id', 'userId', 'projectTitle', 'projectCategory', 'recruiterNotes', 'savedAt']) &&
+             isValidId(data.id) &&
+             data.userId == uid &&
+             data.projectTitle is string && data.projectTitle.size() > 0 && data.projectTitle.size() <= 150 &&
+             (!('projectCategory' in data) || (data.projectCategory is string && data.projectCategory.size() <= 50)) &&
+             (!('recruiterNotes' in data) || (data.recruiterNotes is string && data.recruiterNotes.size() <= 500)) &&
+             data.savedAt is string && data.savedAt.size() <= 50;
+    }
+
+    // --- Validation Helper: SavedChat ---
+    function isValidSavedChat(data, uid) {
+      return data.keys().hasAll(['id', 'userId', 'query', 'answer', 'createdAt']) &&
+             data.keys().hasOnly(['id', 'userId', 'query', 'answer', 'createdAt']) &&
+             isValidId(data.id) &&
+             data.userId == uid &&
+             data.query is string && data.query.size() > 0 && data.query.size() <= 500 &&
+             data.answer is string && data.answer.size() > 0 && data.answer.size() <= 3000 &&
+             data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    // --- Validation Helper: RecruiterInquiry ---
+    function isValidRecruiterInquiry(data) {
+      return data.keys().hasAll(['id', 'userId', 'senderName', 'senderEmail', 'position', 'message', 'status', 'createdAt']) &&
+             data.keys().hasOnly(['id', 'userId', 'senderName', 'senderEmail', 'company', 'position', 'message', 'status', 'autoReplySent', 'autoReplyAt', 'createdAt']) &&
+             isValidId(data.id) &&
+             data.userId == request.auth.uid &&
+             data.senderName is string && data.senderName.size() > 0 && data.senderName.size() <= 100 &&
+             data.senderEmail is string && data.senderEmail.size() > 3 && data.senderEmail.size() <= 150 &&
+             (!('company' in data) || (data.company is string && data.company.size() <= 100)) &&
+             data.position is string && data.position.size() > 0 && data.position.size() <= 100 &&
+             data.message is string && data.message.size() > 0 && data.message.size() <= 2000 &&
+             data.status in ['submitted', 'in_review', 'interview_scheduled', 'closed'] &&
+             (!('autoReplySent' in data) || data.autoReplySent is bool) &&
+             (!('autoReplyAt' in data) || (data.autoReplyAt is string && data.autoReplyAt.size() <= 50)) &&
+             data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    // --- Validation Helper: SkillEndorsement ---
+    function isValidSkillEndorsement(data) {
+      return data.keys().hasAll(['id', 'userId', 'endorserName', 'skillName', 'createdAt']) &&
+             data.keys().hasOnly(['id', 'userId', 'endorserName', 'skillName', 'relationship', 'note', 'createdAt']) &&
+             isValidId(data.id) &&
+             data.userId == request.auth.uid &&
+             data.endorserName is string && data.endorserName.size() > 0 && data.endorserName.size() <= 100 &&
+             data.skillName is string && data.skillName.size() > 0 && data.skillName.size() <= 60 &&
+             (!('relationship' in data) || (data.relationship is string && data.relationship.size() <= 60)) &&
+             (!('note' in data) || (data.note is string && data.note.size() <= 500)) &&
+             data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    // --- User Profile & Nested Collections ---
+    match /users/{userId} {
+      allow get: if isUser(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isUser(userId) && isValidUserProfile(incoming(), userId);
+      allow update: if (isUser(userId) || isAdmin()) &&
+                       isValidUserProfile(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'company', 'role', 'updatedAt']);
+      allow delete: if isAdmin();
+
+      // Recruiter Bookmarked Projects
+      match /savedProjects/{projectId} {
+        allow get: if isUser(userId) || isAdmin();
+        allow list: if isUser(userId) || isAdmin();
+        allow create: if isUser(userId) && isValidId(projectId) && isValidSavedProject(incoming(), userId);
+        allow update: if isUser(userId) &&
+                         isValidSavedProject(incoming(), userId) &&
+                         incoming().id == existing().id &&
+                         incoming().userId == existing().userId &&
+                         incoming().savedAt == existing().savedAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['projectTitle', 'projectCategory', 'recruiterNotes']);
+        allow delete: if isUser(userId) || isAdmin();
+      }
+
+      // User Bookmarked RAG Chat Interactions
+      match /savedChats/{chatId} {
+        allow get: if isUser(userId) || isAdmin();
+        allow list: if isUser(userId) || isAdmin();
+        allow create: if isUser(userId) && isValidId(chatId) && isValidSavedChat(incoming(), userId);
+        allow delete: if isUser(userId) || isAdmin();
+      }
+    }
+
+    // --- Recruiter Inquiries ---
+    match /inquiries/{inquiryId} {
+      allow get: if isVerified() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isVerified() && (isAdmin() || (resource.data.userId == request.auth.uid));
+      allow create: if isVerified() && isValidId(inquiryId) && isValidRecruiterInquiry(incoming()) && incoming().status == 'submitted';
+      allow update: if isAdmin() &&
+                       incoming().id == existing().id &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['status']);
+      allow delete: if isAdmin();
+    }
+
+    // --- Skill Endorsements ---
+    match /endorsements/{endorsementId} {
+      // Community endorsements are public to read
+      allow get: if true;
+      allow list: if true;
+      allow create: if isVerified() && isValidId(endorsementId) && isValidSkillEndorsement(incoming());
+      allow update: if isVerified() && resource.data.userId == request.auth.uid &&
+                       isValidSkillEndorsement(incoming()) &&
+                       incoming().id == existing().id &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['skillName', 'relationship', 'note']);
+      allow delete: if (isVerified() && resource.data.userId == request.auth.uid) || isAdmin();
+    }
+
+    // --- System Test Connection ---
+    match /test/{testId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

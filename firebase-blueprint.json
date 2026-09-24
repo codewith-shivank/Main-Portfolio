@@ -1,0 +1,269 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated visitor and recruiter profile information",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the user",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User email address",
+          "maxLength": 150
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Full name of the visitor or recruiter",
+          "maxLength": 100
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Avatar photo URL from Google Auth",
+          "maxLength": 500
+        },
+        "company": {
+          "type": "string",
+          "description": "Recruiting company or organization",
+          "maxLength": 100
+        },
+        "role": {
+          "type": "string",
+          "description": "Professional title or role",
+          "maxLength": 100
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Profile initial creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Profile last update timestamp"
+        }
+      },
+      "required": ["userId", "email", "displayName", "createdAt", "updatedAt"]
+    },
+    "SavedProject": {
+      "title": "SavedProject",
+      "description": "Candidate projects bookmarked by recruiters for evaluation",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of saved project bookmark",
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the saving user",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "projectTitle": {
+          "type": "string",
+          "description": "Title of the bookmarked project",
+          "maxLength": 150
+        },
+        "projectCategory": {
+          "type": "string",
+          "description": "Engineering category (e.g., Full Stack, MERN, Frontend)",
+          "maxLength": 50
+        },
+        "recruiterNotes": {
+          "type": "string",
+          "description": "Personal recruiter notes or interview evaluation remarks",
+          "maxLength": 500
+        },
+        "savedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when project was bookmarked"
+        }
+      },
+      "required": ["id", "userId", "projectTitle", "savedAt"]
+    },
+    "RecruiterInquiry": {
+      "title": "RecruiterInquiry",
+      "description": "Direct recruitment outreach, interview request, or technical inquiry for Shivank Maurya",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique inquiry ID",
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the recruiter/sender",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "senderName": {
+          "type": "string",
+          "description": "Name of recruiter or engineering manager",
+          "maxLength": 100
+        },
+        "senderEmail": {
+          "type": "string",
+          "format": "email",
+          "description": "Contact email of sender",
+          "maxLength": 150
+        },
+        "company": {
+          "type": "string",
+          "description": "Company hiring for",
+          "maxLength": 100
+        },
+        "position": {
+          "type": "string",
+          "description": "Target job title (e.g. Full Stack Developer)",
+          "maxLength": 100
+        },
+        "message": {
+          "type": "string",
+          "description": "Inquiry or interview opportunity details",
+          "maxLength": 2000
+        },
+        "status": {
+          "type": "string",
+          "description": "Processing status of inquiry",
+          "enum": ["submitted", "in_review", "interview_scheduled", "closed"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when inquiry was submitted"
+        }
+      },
+      "required": ["id", "userId", "senderName", "senderEmail", "position", "message", "status", "createdAt"]
+    },
+    "SkillEndorsement": {
+      "title": "SkillEndorsement",
+      "description": "Peer and technical endorsement for Shivank's verified engineering skills",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique endorsement identifier",
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of endorser",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "endorserName": {
+          "type": "string",
+          "description": "Display name of the endorser",
+          "maxLength": 100
+        },
+        "skillName": {
+          "type": "string",
+          "description": "Name of technical skill being endorsed",
+          "maxLength": 60
+        },
+        "relationship": {
+          "type": "string",
+          "description": "Professional relationship (e.g., Recruiter, Colleague, Team Lead)",
+          "maxLength": 60
+        },
+        "note": {
+          "type": "string",
+          "description": "Brief testimonial or context",
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of endorsement"
+        }
+      },
+      "required": ["id", "userId", "endorserName", "skillName", "createdAt"]
+    },
+    "SavedChat": {
+      "title": "SavedChat",
+      "description": "Saved RAG query and verified answer pairs bookmarked by authenticated users",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique query save ID",
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the user",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "query": {
+          "type": "string",
+          "description": "Question asked to Ask Shivank AI",
+          "maxLength": 500
+        },
+        "answer": {
+          "type": "string",
+          "description": "Grounded answer received from knowledge base",
+          "maxLength": 3000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Saved timestamp"
+        }
+      },
+      "required": ["id", "userId", "query", "answer", "createdAt"]
+    },
+    "TestConnection": {
+      "title": "TestConnection",
+      "description": "Healthcheck probe collection for validating client-server connection",
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "Status string",
+          "maxLength": 50
+        }
+      },
+      "required": ["status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Stores user and recruiter profile information, owned strictly by userId"
+    },
+    "/users/{userId}/savedProjects/{projectId}": {
+      "schema": "SavedProject",
+      "description": "Stores projects saved by a specific user or recruiter"
+    },
+    "/users/{userId}/savedChats/{chatId}": {
+      "schema": "SavedChat",
+      "description": "Stores RAG chat Q&A interactions bookmarked by the user"
+    },
+    "/inquiries/{inquiryId}": {
+      "schema": "RecruiterInquiry",
+      "description": "Recruiter interview proposals and technical inquiries"
+    },
+    "/endorsements/{endorsementId}": {
+      "schema": "SkillEndorsement",
+      "description": "Skill endorsements submitted by authenticated visitors"
+    },
+    "/test/{testId}": {
+      "schema": "TestConnection",
+      "description": "Connectivity test probe"
+    }
+  }
+}
