@@ -4,7 +4,10 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
+  const isProduction = process.env.NODE_ENV === 'production';
   return {
+    // Set base to repo name for GitHub Pages deployment
+    base: isProduction ? '/Main-Portfolio/' : '/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
